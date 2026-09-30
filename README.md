@@ -34,6 +34,10 @@ The package is a `wordpress-plugin`, so `composer/installers` puts it in
 hook it wherever suits. Anything that is not a registered taxonomy is dropped, so
 a typo degrades to "no primary term for that taxonomy" rather than an error.
 
+One exception to "wherever suits": hook it before `init` priority 20, which is
+when the post meta is registered. A taxonomy added after that gets term ordering
+but no meta, and so no REST field and no editor picker.
+
 ```php
 // Also allow a primary tag.
 add_filter( 'hm_primary_term_taxonomies', function ( array $taxonomies ): array {
@@ -85,12 +89,23 @@ also makes it easy to miss when reading someone else's template.
 The choice is stored in post meta keyed `_hm_primary_{$taxonomy}`, registered
 for every post type the taxonomy is attached to and exposed in the REST API.
 
+## The editor picker
+
+The control renders inside the core taxonomy panel, directly below the term
+selector — the same place Yoast SEO puts its own primary category control. It
+lists the terms the post already has and writes the chosen ID to the meta.
+
+It appears for every enabled taxonomy, hierarchical or flat, on every post type
+that taxonomy is attached to. A post with no terms in the taxonomy gets no
+control: the selector immediately above already makes that obvious.
+
+Unticking the chosen term does not clear the meta. The choice is ignored while
+the term is missing and honoured again the moment it is ticked back on.
+
 ## Not here yet
 
 Documented so the shape is clear, but landing in later work:
 
-- **The editor picker.** Choosing the primary term is currently a matter of
-  writing the meta — via `set_primary_term()`, the REST API, or WP-CLI.
 - **The Yoast migration command.** The meta key deliberately mirrors Yoast SEO's
   `_yoast_wpseo_primary_{$taxonomy}`, so the migration is a key rename rather
   than a data transform.

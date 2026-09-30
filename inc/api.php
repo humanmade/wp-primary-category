@@ -22,6 +22,11 @@ const META_PREFIX = '_hm_primary_';
  * anywhere in the load order — including turning the feature off entirely by
  * returning an empty array.
  *
+ * One timing caveat: the meta registration runs once, on `init` at priority 20.
+ * A taxonomy added to the list after that still gets its terms ordered, but has
+ * no registered meta — and so no REST field and no editor picker. Hook before
+ * then if you want the whole feature.
+ *
  * Anything that is not a registered taxonomy is dropped: a typo in the filter
  * should degrade to "no picker" rather than fatal somewhere downstream.
  *
@@ -30,6 +35,10 @@ const META_PREFIX = '_hm_primary_';
 function taxonomies(): array {
 	/**
 	 * Filter the taxonomies that support a primary term.
+	 *
+	 * Hook this before `init` priority 20 for the taxonomy to get its post meta
+	 * registered, and with it the REST field and the editor picker. Hooked any
+	 * later it affects term ordering and nothing else.
 	 *
 	 * @param string[] $taxonomies Taxonomy names.
 	 */

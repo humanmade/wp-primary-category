@@ -20,6 +20,7 @@ namespace HM\Primary_Term;
 // `require_once` so this is a no-op when Composer's `files` autoload has
 // already loaded them, which it will have in a Composer-managed install.
 require_once __DIR__ . '/inc/api.php';
+require_once __DIR__ . '/inc/editor.php';
 require_once __DIR__ . '/inc/namespace.php';
 
 bootstrap();

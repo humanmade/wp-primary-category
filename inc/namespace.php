@@ -15,6 +15,7 @@ function bootstrap(): void {
 	// the time `taxonomies()` filters the list down to the registered ones.
 	add_action( 'init', __NAMESPACE__ . '\\register_meta_fields', 20 );
 	add_filter( 'get_the_terms', __NAMESPACE__ . '\\sort_primary_term_first', 10, 3 );
+	add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\enqueue_editor_assets' );
 }
 
 /**
