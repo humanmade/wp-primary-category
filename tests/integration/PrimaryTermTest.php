@@ -1,6 +1,7 @@
 <?php
 /**
- * Integration tests for the primary term API, ordering filter and meta registration.
+ * Integration tests for the primary term API, meta registration and the
+ * permalink filter.
  */
 
 declare( strict_types=1 );
@@ -57,34 +58,29 @@ class Primary_Term_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, get_primary_term_id( $post ) );
 	}
 
-	public function test_get_the_terms_returns_the_primary_first_and_keeps_the_rest(): void {
+	/**
+	 * 0.2.0 removed the global `get_the_terms` filter. This guards against it
+	 * creeping back: a post's term order is core's, choice or no choice.
+	 */
+	public function test_a_post_s_term_order_is_untouched(): void {
 		[ $post, $advertising, $broadcast ] = $this->post_with_categories();
 
 		$cinema = self::factory()->category->create( [ 'name' => 'Cinema' ] );
 		wp_set_object_terms( $post, [ $advertising, $broadcast, $cinema ], 'category' );
 		update_post_meta( $post, meta_key( 'category' ), $cinema );
 
-		$from_terms      = wp_list_pluck( get_the_terms( $post, 'category' ), 'term_id' );
-		$from_categories = wp_list_pluck( get_the_category( $post ), 'term_id' );
+		$expected = [ $advertising, $broadcast, $cinema ];
 
-		$this->assertSame( $cinema, $from_terms[0] );
-		$this->assertSame( $cinema, $from_categories[0] );
-		$this->assertEqualSets( [ $advertising, $broadcast, $cinema ], $from_terms );
-		$this->assertEqualSets( [ $advertising, $broadcast, $cinema ], $from_categories );
+		$this->assertSame( $expected, wp_list_pluck( get_the_terms( $post, 'category' ), 'term_id' ) );
+		$this->assertSame( $expected, wp_list_pluck( get_the_category( $post ), 'term_id' ) );
+
+		// The choice is still readable; only the global ordering has gone.
+		$this->assertSame( $cinema, get_primary_term( $post )->term_id );
 	}
 
-	public function test_a_taxonomy_that_is_not_enabled_is_left_alone(): void {
-		$post = self::factory()->post->create();
-
-		$first  = self::factory()->tag->create( [ 'name' => 'Agencies' ] );
-		$second = self::factory()->tag->create( [ 'name' => 'Brands' ] );
-		wp_set_object_terms( $post, [ $first, $second ], 'post_tag' );
-
-		// Meta the ordering filter would act on, were post_tag enabled.
-		update_post_meta( $post, meta_key( 'post_tag' ), $second );
-
+	public function test_a_taxonomy_that_is_not_enabled_has_no_picker(): void {
 		$this->assertNotContains( 'post_tag', taxonomies() );
-		$this->assertSame( [ $first, $second ], wp_list_pluck( get_the_terms( $post, 'post_tag' ), 'term_id' ) );
+		$this->assertArrayNotHasKey( meta_key( 'post_tag' ), get_registered_meta_keys( 'post', 'post' ) );
 	}
 
 	public function test_the_filter_can_enable_another_taxonomy(): void {
@@ -97,19 +93,14 @@ class Primary_Term_Test extends WP_UnitTestCase {
 
 		add_filter( 'hm_primary_term_taxonomies', fn( $taxonomies ) => [ ...$taxonomies, 'post_tag' ] );
 
-		$this->assertSame( [ $second, $first ], wp_list_pluck( get_the_terms( $post, 'post_tag' ), 'term_id' ) );
+		$this->assertContains( 'post_tag', taxonomies() );
 		$this->assertSame( $second, get_primary_term( $post, 'post_tag' )->term_id );
 	}
 
 	public function test_the_filter_can_disable_category(): void {
-		[ $post, $advertising, $broadcast ] = $this->post_with_categories();
-
-		update_post_meta( $post, meta_key( 'category' ), $broadcast );
-
 		add_filter( 'hm_primary_term_taxonomies', fn() => [] );
 
 		$this->assertSame( [], taxonomies() );
-		$this->assertSame( [ $advertising, $broadcast ], wp_list_pluck( get_the_category( $post ), 'term_id' ) );
 	}
 
 	public function test_the_filter_drops_anything_that_is_not_a_registered_taxonomy(): void {
@@ -183,6 +174,42 @@ class Primary_Term_Test extends WP_UnitTestCase {
 
 		wp_set_current_user( $author );
 		$this->assertTrue( (bool) $auth( false, $key, $post, $author, 'edit_post_meta', [] ) );
+	}
+
+	public function test_the_permalink_uses_the_primary_category(): void {
+		[ $post, $advertising, $broadcast ] = $this->post_with_categories();
+
+		update_post_meta( $post, meta_key( 'category' ), $broadcast );
+
+		$categories = get_the_category( $post );
+		$chosen     = apply_filters( 'post_link_category', $categories[0], $categories, get_post( $post ) );
+
+		$this->assertSame( $broadcast, $chosen->term_id );
+	}
+
+	public function test_the_permalink_is_left_alone_without_a_primary_category(): void {
+		[ , $advertising, $broadcast ] = $this->post_with_categories();
+
+		$uncategorised = self::factory()->post->create();
+		wp_set_object_terms( $uncategorised, [], 'category' );
+
+		$categories = [ get_term( $advertising ), get_term( $broadcast ) ];
+		$chosen     = apply_filters( 'post_link_category', $categories[0], $categories, get_post( $uncategorised ) );
+
+		$this->assertSame( $advertising, $chosen->term_id );
+	}
+
+	public function test_the_permalink_is_left_alone_when_category_is_not_enabled(): void {
+		[ $post, $advertising, $broadcast ] = $this->post_with_categories();
+
+		update_post_meta( $post, meta_key( 'category' ), $broadcast );
+
+		add_filter( 'hm_primary_term_taxonomies', fn() => [] );
+
+		$categories = get_the_category( $post );
+		$chosen     = apply_filters( 'post_link_category', $categories[0], $categories, get_post( $post ) );
+
+		$this->assertSame( $advertising, $chosen->term_id );
 	}
 
 	/**

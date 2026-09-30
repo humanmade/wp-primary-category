@@ -21,6 +21,7 @@
     "autoload": {
         "files": [
             "inc/api.php",
+            "inc/block.php",
             "inc/cli.php",
             "inc/editor.php",
             "inc/migrate.php",

@@ -121,7 +121,7 @@
 			__next40pxDefaultSize: true,
 			label: taxonomy.label,
 			help: __(
-				'Listed first wherever this post’s terms appear.',
+				'Used wherever this post’s primary term is asked for.',
 				'hm-primary-category'
 			),
 			options: options,

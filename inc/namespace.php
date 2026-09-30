@@ -14,8 +14,10 @@ function bootstrap(): void {
 	// Priority 20 so taxonomies registered on `init` at the default 10 exist by
 	// the time `taxonomies()` filters the list down to the registered ones.
 	add_action( 'init', __NAMESPACE__ . '\\register_meta_fields', 20 );
-	add_filter( 'get_the_terms', __NAMESPACE__ . '\\sort_primary_term_first', 10, 3 );
 	add_action( 'enqueue_block_editor_assets', __NAMESPACE__ . '\\enqueue_editor_assets' );
+	add_filter( 'block_type_metadata', __NAMESPACE__ . '\\register_primary_only_attribute' );
+	add_filter( 'register_block_type_args', __NAMESPACE__ . '\\wrap_post_terms_render', 10, 2 );
+	add_filter( 'post_link_category', __NAMESPACE__ . '\\filter_permalink_category', 10, 3 );
 }
 
 /**
@@ -75,4 +77,36 @@ function register_meta_fields(): void {
  */
 function can_edit_primary_term( $allowed, $meta_key, $post_id, $user_id, $cap, $caps ): bool { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable, Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Fixed `auth_callback` signature.
 	return current_user_can( 'edit_post', $post_id );
+}
+
+/**
+ * Use the primary category in a `%category%` permalink.
+ *
+ * Core picks whichever of a post's categories sorts first, which is an accident
+ * of naming rather than an editorial decision. Anything this cannot vouch for —
+ * no primary, or one core did not offer — is left to core.
+ *
+ * @param \WP_Term   $category   The category core chose.
+ * @param \WP_Term[] $categories The post's categories.
+ * @param \WP_Post   $post       The post.
+ * @return \WP_Term
+ */
+function filter_permalink_category( $category, $categories, $post ) {
+	if ( ! in_array( 'category', taxonomies(), true ) ) {
+		return $category;
+	}
+
+	$primary = get_primary_term( (int) $post->ID, 'category' );
+
+	if ( ! $primary ) {
+		return $category;
+	}
+
+	foreach ( (array) $categories as $candidate ) {
+		if ( $candidate instanceof \WP_Term && $candidate->term_id === $primary->term_id ) {
+			return $primary;
+		}
+	}
+
+	return $category;
 }

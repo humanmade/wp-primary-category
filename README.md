@@ -1,12 +1,12 @@
 # HM Primary Category
 
-Lets an editor mark one term per taxonomy as a post's **primary** one, and makes
-WordPress return that term first.
+Lets an editor mark one term per taxonomy as a post's **primary** one, and gives
+you explicit ways to use that choice: an API, an option on core's Post Terms
+block, and `%category%` permalinks.
 
-`get_the_category()` is a thin wrapper over `get_the_terms()`, so a single
-`get_the_terms` filter puts the chosen term at index 0 for every caller — core
-blocks, feeds, archive listings, your own templates — without any of them opting
-in. Nothing needs to know this plugin exists.
+Nothing about a post's term order changes. `get_the_terms()`, `get_the_category()`
+and everything built on them return exactly what they returned before — the
+plugin stores the choice and hands it to whatever asks for it.
 
 Enabled for `category` out of the box; opt in any other taxonomy with a filter.
 
@@ -35,8 +35,8 @@ hook it wherever suits. Anything that is not a registered taxonomy is dropped, s
 a typo degrades to "no primary term for that taxonomy" rather than an error.
 
 One exception to "wherever suits": hook it before `init` priority 20, which is
-when the post meta is registered. A taxonomy added after that gets term ordering
-but no meta, and so no REST field and no editor picker.
+when the post meta is registered. A taxonomy added after that has no meta, and
+so no REST field, no editor picker and no block toggle.
 
 ```php
 // Also allow a primary tag.
@@ -77,17 +77,45 @@ function get_primary_term_id( int $post_id, string $taxonomy = 'category' ): int
 // Record a choice. False if the term does not exist, is in another taxonomy, or
 // is not assigned to the post. A term ID of 0 clears the choice.
 function set_primary_term( int $post_id, int $term_id, string $taxonomy = 'category' ): bool;
-
-// The `get_the_terms` filter. Hooked for you; you should not need to call it.
-function sort_primary_term_first( $terms, $post_id, $taxonomy );
 ```
-
-Prefer `get_primary_term()` when you want the intent to be explicit at the call
-site. The ordering filter is powerful precisely because it is invisible, which
-also makes it easy to miss when reading someone else's template.
 
 The choice is stored in post meta keyed `_hm_primary_{$taxonomy}`, registered
 for every post type the taxonomy is attached to and exposed in the REST API.
+
+## The Post Terms block
+
+Core's Post Terms block takes an extra `hmPrimaryOnly` attribute. Set it and the
+block renders the post's primary term for whichever taxonomy its own `term`
+attribute names, instead of the whole list:
+
+```html
+<!-- wp:post-terms {"term":"category","hmPrimaryOnly":true} /-->
+```
+
+In the editor the option is a **Primary term only** toggle in the block's
+inspector sidebar. It appears only when the block points at a taxonomy this
+plugin has enabled, so the toggle cannot promise something the server will not
+deliver.
+
+Markup, classes, prefix and suffix are core's — the block renders normally and
+the list is trimmed to its first term, rather than being rebuilt by hand.
+
+A taxonomy that is *not* enabled still works if you set the attribute directly:
+it falls back to that taxonomy's first term rather than erroring.
+
+The term ordering this needs is applied for the duration of that one block's
+render and removed immediately afterwards. No other block, template or query in
+the same request sees a changed term order.
+
+## Permalinks
+
+Sites with `%category%` in their permalink structure get the primary category in
+the URL rather than whichever one core happened to pick. This is a
+`post_link_category` filter, and it applies only while `category` is an enabled
+taxonomy and the primary is one of the categories core offered.
+
+Changing which category appears in a post's URL changes that URL. On an existing
+site, check your redirects before enabling this on a `%category%` structure.
 
 ## The editor picker
 
@@ -105,6 +133,30 @@ control: the selector immediately above already makes that obvious.
 
 Unticking the chosen term does not clear the meta. The choice is ignored while
 the term is missing and honoured again the moment it is ticked back on.
+
+## Upgrading to 0.2.0
+
+**0.2.0 removes the global `get_the_terms` filter.** Up to 0.1.2 the plugin put
+the chosen term at index 0 for every caller. That reach was the selling point,
+and it is the reason it has gone: it changed feeds and archive listings that
+never asked for it, and a maintainer reading `get_the_category()[0]` had no way
+to see why it worked.
+
+What replaces it is explicit and opt-in: `get_primary_term()`, the
+`hmPrimaryOnly` block attribute, and the permalink filter.
+
+If you were relying on the ordering, you have to say so now:
+
+| Was | Now |
+| --- | --- |
+| `get_the_category( $post )[0]` | `get_primary_term( $post )` |
+| `get_the_terms( $post, $tax )[0]` | `get_primary_term( $post, $tax )` |
+| A `core/post-terms` block showing the primary first | Add `hmPrimaryOnly` — it now shows the primary alone |
+| `%category%` permalinks picking the primary | Still does, now via `post_link_category` rather than as a side effect |
+
+`sort_primary_term_first()` has been removed. Nothing else in the API changed:
+the meta keys, `get_primary_term()`, `set_primary_term()` and the migration
+command all behave as before, so there is no data to migrate.
 
 ## Migrating from Yoast SEO
 

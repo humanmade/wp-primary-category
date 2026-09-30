@@ -1,6 +1,6 @@
 <?php
 /**
- * The public API: read, write and order a post's primary term.
+ * The public API: read and write a post's primary term.
  *
  * @package HM\Primary_Term
  */
@@ -23,9 +23,8 @@ const META_PREFIX = '_hm_primary_';
  * returning an empty array.
  *
  * One timing caveat: the meta registration runs once, on `init` at priority 20.
- * A taxonomy added to the list after that still gets its terms ordered, but has
- * no registered meta — and so no REST field and no editor picker. Hook before
- * then if you want the whole feature.
+ * A taxonomy added to the list after that has no registered meta — and so no
+ * REST field, no editor picker and no block toggle. Hook before then.
  *
  * Anything that is not a registered taxonomy is dropped: a typo in the filter
  * should degrade to "no picker" rather than fatal somewhere downstream.
@@ -37,8 +36,8 @@ function taxonomies(): array {
 	 * Filter the taxonomies that support a primary term.
 	 *
 	 * Hook this before `init` priority 20 for the taxonomy to get its post meta
-	 * registered, and with it the REST field and the editor picker. Hooked any
-	 * later it affects term ordering and nothing else.
+	 * registered, and with it the REST field, the editor picker and the block
+	 * toggle. Hooked any later it does nothing.
 	 *
 	 * @param string[] $taxonomies Taxonomy names.
 	 */
@@ -145,51 +144,4 @@ function set_primary_term( int $post_id, int $term_id, string $taxonomy = 'categ
 	}
 
 	return (bool) update_post_meta( $post_id, $key, $term_id );
-}
-
-/**
- * Put the primary term at the front of a post's term list.
- *
- * `get_the_category()` is a thin wrapper over `get_the_terms()`, so this one
- * filter makes the chosen term appear at index 0 for every reader of a post's
- * terms — core blocks, feeds, archive listings — with none of them opting in.
- * That reach is the point, but it is also invisible at the call site: reach for
- * `get_primary_term()` when you want the intent to be explicit.
- *
- * Reads the meta directly and deliberately. `get_primary_term()`,
- * `get_the_terms()` and `get_the_category()` all route back through this
- * filter; calling any of them from here recurses.
- *
- * @param \WP_Term[]|\WP_Error $terms    The post's terms.
- * @param int                  $post_id  Post ID.
- * @param string               $taxonomy Taxonomy name.
- * @return \WP_Term[]|\WP_Error
- */
-function sort_primary_term_first( $terms, $post_id, $taxonomy ) {
-	if ( ! in_array( $taxonomy, taxonomies(), true ) ) {
-		return $terms;
-	}
-
-	if ( is_wp_error( $terms ) || ! is_array( $terms ) || count( $terms ) < 2 ) {
-		return $terms;
-	}
-
-	$chosen = (int) get_post_meta( $post_id, meta_key( $taxonomy ), true );
-
-	if ( ! $chosen ) {
-		return $terms;
-	}
-
-	$primary = [];
-	$rest    = [];
-
-	foreach ( $terms as $term ) {
-		if ( $chosen === $term->term_id ) {
-			$primary[] = $term;
-		} else {
-			$rest[] = $term;
-		}
-	}
-
-	return array_values( array_merge( $primary, $rest ) );
 }

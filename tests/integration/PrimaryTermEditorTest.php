@@ -1,9 +1,9 @@
 <?php
 /**
- * Integration tests for the editor picker's PHP side: the data handed to the
- * script, and the screens it is enqueued on.
+ * Integration tests for the editor scripts' PHP side: the data handed to them,
+ * and the screens each is enqueued on.
  *
- * The script itself needs a browser and is verified separately.
+ * The scripts themselves need a browser and are verified separately.
  */
 
 declare( strict_types=1 );
@@ -19,9 +19,14 @@ use function HM\Primary_Term\meta_key;
 class Primary_Term_Editor_Test extends WP_UnitTestCase {
 
 	/**
-	 * The script handle under test.
+	 * The taxonomy picker's script handle.
 	 */
 	private const HANDLE = 'hm-primary-term-editor';
+
+	/**
+	 * The block extensions' script handle, which also carries the shared data.
+	 */
+	private const BLOCKS_HANDLE = 'hm-primary-term-blocks';
 
 	public function set_up(): void {
 		parent::set_up();
@@ -93,13 +98,23 @@ class Primary_Term_Editor_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_the_script_carries_the_data_on_a_post_screen(): void {
+	public function test_both_scripts_load_on_a_post_screen(): void {
 		set_current_screen( 'post' );
 		enqueue_editor_assets();
 
 		$this->assertTrue( wp_script_is( self::HANDLE, 'enqueued' ) );
+		$this->assertTrue( wp_script_is( self::BLOCKS_HANDLE, 'enqueued' ) );
 
-		$inline = implode( '', (array) wp_scripts()->get_data( self::HANDLE, 'before' ) );
+		// The picker depends on the handle the data hangs off, so it cannot run
+		// before `window.hmPrimaryTerm` is defined.
+		$this->assertContains( self::BLOCKS_HANDLE, wp_scripts()->registered[ self::HANDLE ]->deps );
+	}
+
+	public function test_the_data_is_carried_by_the_always_enqueued_handle(): void {
+		set_current_screen( 'post' );
+		enqueue_editor_assets();
+
+		$inline = implode( '', (array) wp_scripts()->get_data( self::BLOCKS_HANDLE, 'before' ) );
 
 		$this->assertStringContainsString( 'window.hmPrimaryTerm =', $inline );
 		$this->assertStringContainsString( '"restBase":"categories"', $inline );
@@ -113,12 +128,17 @@ class Primary_Term_Editor_Test extends WP_UnitTestCase {
 
 		$this->assertSame( [], editor_data() );
 		$this->assertFalse( wp_script_is( self::HANDLE, 'enqueued' ) );
+		$this->assertFalse( wp_script_is( self::BLOCKS_HANDLE, 'enqueued' ) );
 	}
 
-	public function test_nothing_is_enqueued_for_a_post_type_the_taxonomy_is_not_attached_to(): void {
+	public function test_the_picker_is_skipped_for_a_post_type_the_taxonomy_is_not_attached_to(): void {
 		set_current_screen( 'page' );
 		enqueue_editor_assets();
 
 		$this->assertFalse( wp_script_is( self::HANDLE, 'enqueued' ) );
+
+		// The block toggle still loads: a Post Terms block on a page's template
+		// still shows a post's terms.
+		$this->assertTrue( wp_script_is( self::BLOCKS_HANDLE, 'enqueued' ) );
 	}
 }

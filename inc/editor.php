@@ -1,11 +1,12 @@
 <?php
 /**
- * The editor picker: a "Primary <term>" control inside the core taxonomy panel.
+ * The editor scripts: a "Primary <term>" control inside the core taxonomy
+ * panel, and a "Primary term only" toggle on core's Post Terms block.
  *
- * The choice is about the post's terms, so it belongs beside them rather than
- * in a panel of its own — the same place Yoast SEO puts its primary category
- * control. Everything the script needs is handed to it from here, so one script
- * serves any taxonomy the filter enables.
+ * The choice is about the post's terms, so its control belongs beside them
+ * rather than in a panel of its own — the same place Yoast SEO puts its primary
+ * category control. Everything both scripts need is handed to them from here,
+ * so one enabled-taxonomy list serves any taxonomy the filter enables.
  *
  * @package HM\Primary_Term
  */
@@ -13,9 +14,14 @@
 namespace HM\Primary_Term;
 
 /**
- * Handle of the editor script.
+ * Handle of the taxonomy picker script.
  */
 const EDITOR_HANDLE = 'hm-primary-term-editor';
+
+/**
+ * Handle of the block extensions script.
+ */
+const BLOCKS_HANDLE = 'hm-primary-term-blocks';
 
 /**
  * What the editor script needs to render a control per enabled taxonomy, keyed
@@ -71,20 +77,42 @@ function editor_data(): array {
 }
 
 /**
- * Enqueue the picker on block editor screens that can use it.
+ * Enqueue the editor scripts.
  *
- * The post-type test mirrors `register_meta_fields()`: the meta exists for the
- * post types each enabled taxonomy is attached to, so the picker is offered on
- * exactly those screens and the two cannot disagree.
+ * The block toggle goes on every block editor screen: a Post Terms block is
+ * usually edited in a template rather than in a post, where there is no post
+ * type to test against. The picker is narrower — the post-type test mirrors
+ * `register_meta_fields()`, so the picker is offered on exactly the screens the
+ * meta exists for and the two cannot disagree.
  */
 function enqueue_editor_assets(): void {
+	$data = editor_data();
+
+	if ( empty( $data ) ) {
+		return;
+	}
+
+	wp_enqueue_script(
+		BLOCKS_HANDLE,
+		plugins_url( 'blocks.js', __FILE__ ),
+		[ 'wp-block-editor', 'wp-blocks', 'wp-components', 'wp-compose', 'wp-element', 'wp-hooks', 'wp-i18n' ],
+		filemtime( __DIR__ . '/blocks.js' ),
+		true
+	);
+
+	// Both scripts read this, so it hangs off the handle that is always
+	// enqueued and the picker declares a dependency on that handle.
+	wp_add_inline_script(
+		BLOCKS_HANDLE,
+		'window.hmPrimaryTerm = ' . wp_json_encode( $data ) . ';',
+		'before'
+	);
+
 	$screen = get_current_screen();
 
 	if ( ! $screen || ! $screen->post_type ) {
 		return;
 	}
-
-	$data = editor_data();
 
 	$for_this_post_type = array_filter(
 		$data,
@@ -98,16 +126,8 @@ function enqueue_editor_assets(): void {
 	wp_enqueue_script(
 		EDITOR_HANDLE,
 		plugins_url( 'editor.js', __FILE__ ),
-		[ 'wp-components', 'wp-compose', 'wp-data', 'wp-editor', 'wp-element', 'wp-hooks', 'wp-i18n' ],
+		[ BLOCKS_HANDLE, 'wp-components', 'wp-compose', 'wp-data', 'wp-editor', 'wp-element', 'wp-hooks', 'wp-i18n' ],
 		filemtime( __DIR__ . '/editor.js' ),
 		true
-	);
-
-	// The whole map, not just this post type's share: the script filters on
-	// `postTypes` itself, and the panel is the only thing that has to match.
-	wp_add_inline_script(
-		EDITOR_HANDLE,
-		'window.hmPrimaryTerm = ' . wp_json_encode( $data ) . ';',
-		'before'
 	);
 }
