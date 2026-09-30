@@ -3,7 +3,7 @@
  * Plugin Name: HM Primary Category
  * Plugin URI: https://github.com/humanmade/wp-primary-category
  * Description: Lets an editor mark one term per taxonomy as a post's primary one, and makes WordPress return it first.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Human Made Limited
  * Author URI: https://humanmade.com
  * Text Domain: hm-primary-category
@@ -16,6 +16,23 @@
  */
 
 namespace HM\Primary_Term;
+
+/*
+ * Two copies on disk — a stale directory left behind by a changed install
+ * path, or a hand-dropped one alongside the Composer-managed install — are two
+ * different `__DIR__`s, so `require_once` below will not stop the second
+ * redeclaring the first. That is a fatal, and it fires on activation, when
+ * somebody is least able to read a stack trace. Stand down instead.
+ *
+ * Keyed on this file having run, not on the functions existing: Composer's
+ * `files` autoload defines them before this file is reached in a normal
+ * install, and bailing there would skip `bootstrap()` and register nothing.
+ */
+if ( defined( __NAMESPACE__ . '\\LOADED' ) ) {
+	return;
+}
+
+define( __NAMESPACE__ . '\\LOADED', true );
 
 // `require_once` so this is a no-op when Composer's `files` autoload has
 // already loaded them, which it will have in a Composer-managed install.
