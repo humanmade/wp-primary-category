@@ -21,6 +21,7 @@
     "autoload": {
         "files": [
             "inc/api.php",
+            "inc/bindings.php",
             "inc/block.php",
             "inc/cli.php",
             "inc/editor.php",

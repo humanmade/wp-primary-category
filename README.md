@@ -2,7 +2,7 @@
 
 Lets an editor mark one term per taxonomy as a post's **primary** one, and gives
 you explicit ways to use that choice: an API, an option on core's Post Terms
-block, and `%category%` permalinks.
+block, a Block Bindings source, and `%category%` permalinks.
 
 Nothing about a post's term order changes. `get_the_terms()`, `get_the_category()`
 and everything built on them return exactly what they returned before — the
@@ -106,6 +106,57 @@ it falls back to that taxonomy's first term rather than erroring.
 The term ordering this needs is applied for the duration of that one block's
 render and removed immediately afterwards. No other block, template or query in
 the same request sees a changed term order.
+
+## The block binding
+
+The Post Terms block renders the primary term as a *term list*. When you want
+the bare value — in a heading, a button's URL, a sentence — bind it instead. The
+`hm/primary-term` source resolves to the same term `get_primary_term()` returns,
+for any block attribute that accepts a binding.
+
+| Argument | Values | Default |
+| --- | --- | --- |
+| `taxonomy` | Any taxonomy name. | `category` |
+| `key` | `name`, `url` or `slug`. | none — required |
+
+`url` is the term's archive link, via `get_term_link()`, so it works for any
+taxonomy rather than just categories.
+
+A "More on ..." button linking to the primary sector's archive, with the label
+bound to the sector's name:
+
+```html
+<!-- wp:buttons -->
+<div class="wp-block-buttons"><!-- wp:button {"metadata":{"bindings":{
+	"url":{"source":"hm/primary-term","args":{"taxonomy":"sector","key":"url"}},
+	"text":{"source":"hm/primary-term","args":{"taxonomy":"sector","key":"name"}}
+}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#">More</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons -->
+```
+
+And the primary category's name in a paragraph:
+
+```html
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"hm/primary-term","args":{"key":"name"}}}}} -->
+<p>Uncategorised</p>
+<!-- /wp:paragraph -->
+```
+
+The binding returns nothing — and so the block keeps its own saved content — when
+the post has no terms in that taxonomy, when `key` is not one of the three above,
+or when the term has no resolvable link. That fallback is the point: write
+something sensible into the block and an uncategorised post renders it, rather
+than an empty heading or a dead link.
+
+There is deliberately **no format or template argument**. A translatable string
+like `"More on %s"` parked in block markup is out of reach of the site's own
+translations — wrap the binding in whatever markup and copy the template needs
+instead.
+
+The source requires WordPress 6.5+ for Block Bindings. On anything older it is
+not registered and every bound block falls back to its own content.
 
 ## Permalinks
 

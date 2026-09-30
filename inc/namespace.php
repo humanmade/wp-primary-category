@@ -11,6 +11,8 @@ namespace HM\Primary_Term;
  * Hook the feature up.
  */
 function bootstrap(): void {
+	add_action( 'init', __NAMESPACE__ . '\\register_binding_source' );
+
 	// Priority 20 so taxonomies registered on `init` at the default 10 exist by
 	// the time `taxonomies()` filters the list down to the registered ones.
 	add_action( 'init', __NAMESPACE__ . '\\register_meta_fields', 20 );
