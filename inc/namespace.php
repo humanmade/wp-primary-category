@@ -92,6 +92,19 @@ function can_edit_primary_term( $allowed, $meta_key, $post_id, $user_id, $cap, $
  * @return \WP_Term
  */
 function filter_permalink_category( $category, $categories, $post ) {
+	/**
+	 * Whether the primary category should appear in `%category%` permalinks.
+	 *
+	 * On by default, matching Yoast SEO. Worth turning off on a site that
+	 * already has `%category%` URLs in the wild: changing which term appears
+	 * changes the URL, and old ones stop resolving.
+	 *
+	 * @param bool $enabled Whether to rewrite the permalink's category.
+	 */
+	if ( ! apply_filters( 'hm_primary_term_filter_permalinks', true ) ) {
+		return $category;
+	}
+
 	if ( ! in_array( 'category', taxonomies(), true ) ) {
 		return $category;
 	}

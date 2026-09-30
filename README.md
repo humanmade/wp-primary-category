@@ -117,6 +117,13 @@ taxonomy and the primary is one of the categories core offered.
 Changing which category appears in a post's URL changes that URL. On an existing
 site, check your redirects before enabling this on a `%category%` structure.
 
+Turn it off on a site that already has `%category%` URLs in the wild —
+changing which term appears changes the URL:
+
+```php
+add_filter( 'hm_primary_term_filter_permalinks', '__return_false' );
+```
+
 ## The editor picker
 
 The control renders inside the core taxonomy panel, directly below the term
