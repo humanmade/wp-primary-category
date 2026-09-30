@@ -18,6 +18,10 @@ const META_PREFIX = '_hm_primary_';
 /**
  * The taxonomies a primary term can be chosen for.
  *
+ * WordPress's own two by default. Both are ordinary term lists with no
+ * inherent winner, which is the problem this solves, and a site that wants
+ * only one of them says so with the filter.
+ *
  * Filtered on every call rather than cached, so a consumer can hook this from
  * anywhere in the load order — including turning the feature off entirely by
  * returning an empty array.
@@ -41,7 +45,7 @@ function taxonomies(): array {
 	 *
 	 * @param string[] $taxonomies Taxonomy names.
 	 */
-	$taxonomies = apply_filters( 'hm_primary_term_taxonomies', [ 'category' ] );
+	$taxonomies = apply_filters( 'hm_primary_term_taxonomies', [ 'category', 'post_tag' ] );
 
 	if ( ! is_array( $taxonomies ) ) {
 		return [];

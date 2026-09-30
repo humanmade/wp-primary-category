@@ -78,26 +78,38 @@ class Primary_Term_Test extends WP_UnitTestCase {
 		$this->assertSame( $cinema, get_primary_term( $post )->term_id );
 	}
 
+	public function test_core_taxonomies_are_enabled_by_default(): void {
+		$this->assertSame( [ 'category', 'post_tag' ], taxonomies() );
+	}
+
 	public function test_a_taxonomy_that_is_not_enabled_has_no_picker(): void {
-		$this->assertNotContains( 'post_tag', taxonomies() );
-		$this->assertArrayNotHasKey( meta_key( 'post_tag' ), get_registered_meta_keys( 'post', 'post' ) );
+		$this->assertNotContains( 'post_format', taxonomies() );
+		$this->assertArrayNotHasKey( meta_key( 'post_format' ), get_registered_meta_keys( 'post', 'post' ) );
 	}
 
 	public function test_the_filter_can_enable_another_taxonomy(): void {
+		register_taxonomy( 'genre', 'post' );
+
 		$post = self::factory()->post->create();
 
-		$first  = self::factory()->tag->create( [ 'name' => 'Agencies' ] );
-		$second = self::factory()->tag->create( [ 'name' => 'Brands' ] );
-		wp_set_object_terms( $post, [ $first, $second ], 'post_tag' );
-		update_post_meta( $post, meta_key( 'post_tag' ), $second );
+		$first  = self::factory()->term->create( [ 'taxonomy' => 'genre', 'name' => 'Analysis' ] );
+		$second = self::factory()->term->create( [ 'taxonomy' => 'genre', 'name' => 'Briefing' ] );
+		wp_set_object_terms( $post, [ $first, $second ], 'genre' );
+		update_post_meta( $post, meta_key( 'genre' ), $second );
 
-		add_filter( 'hm_primary_term_taxonomies', fn( $taxonomies ) => [ ...$taxonomies, 'post_tag' ] );
+		add_filter( 'hm_primary_term_taxonomies', fn( $taxonomies ) => [ ...$taxonomies, 'genre' ] );
 
-		$this->assertContains( 'post_tag', taxonomies() );
-		$this->assertSame( $second, get_primary_term( $post, 'post_tag' )->term_id );
+		$this->assertContains( 'genre', taxonomies() );
+		$this->assertSame( $second, get_primary_term( $post, 'genre' )->term_id );
 	}
 
-	public function test_the_filter_can_disable_category(): void {
+	public function test_the_filter_can_disable_a_default_taxonomy(): void {
+		add_filter( 'hm_primary_term_taxonomies', fn( $taxonomies ) => array_values( array_diff( $taxonomies, [ 'post_tag' ] ) ) );
+
+		$this->assertSame( [ 'category' ], taxonomies() );
+	}
+
+	public function test_the_filter_can_disable_everything(): void {
 		add_filter( 'hm_primary_term_taxonomies', fn() => [] );
 
 		$this->assertSame( [], taxonomies() );
