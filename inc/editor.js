@@ -72,11 +72,13 @@
 		var editPost = useDispatch( 'core/editor' ).editPost;
 
 		// The meta is only registered for the post types the taxonomy is
-		// attached to. With no terms assigned there is nothing to choose
-		// between, and the selector directly above already says so.
+		// attached to. Below two terms there is nothing to choose between —
+		// one term is the primary by definition, none leaves the selector
+		// directly above to say so — and a control with a single fixed option
+		// is a question with one answer.
 		if (
 			taxonomy.postTypes.indexOf( data.postType ) === -1 ||
-			! data.ids.length
+			data.ids.length < 2
 		) {
 			return null;
 		}

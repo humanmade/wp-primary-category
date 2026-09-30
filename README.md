@@ -95,6 +95,10 @@ The control renders inside the core taxonomy panel, directly below the term
 selector — the same place Yoast SEO puts its own primary category control. It
 lists the terms the post already has and writes the chosen ID to the meta.
 
+It appears only once the post has two or more terms in that taxonomy. One term
+is the primary by definition, so a control offering a single fixed option is a
+question with one answer. Assign a second term and it appears.
+
 It appears for every enabled taxonomy, hierarchical or flat, on every post type
 that taxonomy is attached to. A post with no terms in the taxonomy gets no
 control: the selector immediately above already makes that obvious.
