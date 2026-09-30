@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Runs tests/integration inside WordPress Playground — no local database
+	required. Run via:
+
+		npm test
+
+	See tests/integration/bootstrap-playground.php for how this works.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+         bootstrap="tests/integration/bootstrap-playground.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true">
+    <testsuites>
+        <testsuite name="integration">
+            <directory suffix="Test.php">tests/integration</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

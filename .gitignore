@@ -1,0 +1,5 @@
+vendor/
+node_modules/
+wp-content/
+.phpunit.result.cache
+.playwright-mcp/

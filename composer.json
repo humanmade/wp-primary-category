@@ -1,0 +1,39 @@
+{
+    "name": "humanmade/wp-primary-category",
+    "description": "Lets an editor mark one term per taxonomy as a post's primary one, and makes WordPress return it first.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Human Made Limited",
+            "email": "engineering@humanmade.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "humanmade/coding-standards": "^2.5",
+        "phpunit/phpunit": "^9",
+        "wp-phpunit/wp-phpunit": "^7.0",
+        "yoast/phpunit-polyfills": "^4.0"
+    },
+    "autoload": {
+        "files": [
+            "inc/api.php",
+            "inc/namespace.php"
+        ]
+    },
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "format": "phpcbf"
+    }
+}

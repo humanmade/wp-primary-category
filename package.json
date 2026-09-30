@@ -1,0 +1,16 @@
+{
+  "name": "wp-primary-category",
+  "private": true,
+  "description": "HM Primary Category",
+  "license": "GPL-2.0-or-later",
+  "author": "Human Made Limited",
+  "scripts": {
+    "test": "wp-playground-cli php --blueprint=tests/integration/blueprint.json --site-url=http://wp-primary-category.test --mount=.:/repo -- /repo/vendor/bin/phpunit -c /repo/phpunit-playground.xml.dist"
+  },
+  "devDependencies": {
+    "@wp-playground/cli": "^3.1.55"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

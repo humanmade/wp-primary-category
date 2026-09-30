@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ruleset name="wp-primary-category">
+	<description>PHP Coding Standards for HM Primary Category</description>
+
+	<!-- Set the PHP version for PHP_CodeSniffer / HM Linter. -->
+	<config name="php_version" value="80100"/>
+
+	<!-- Set a minimum PHP version for PHPCompatibility. -->
+	<config name="testVersion" value="8.1-"/>
+
+	<!-- Show sniff codes in all reports. -->
+	<arg value="s"/>
+
+	<!-- Check PHP files only. -->
+	<arg name="extensions" value="php"/>
+
+	<!-- Files to check. -->
+	<file>.</file>
+
+	<!-- Exclude dependencies and anything WordPress drops in during a test run. -->
+	<exclude-pattern>*/vendor/</exclude-pattern>
+	<exclude-pattern>*/node_modules/</exclude-pattern>
+	<exclude-pattern>*/wp-content/</exclude-pattern>
+
+	<!-- The WP test suite's file naming is its own convention, not this one. -->
+	<exclude-pattern>*/tests/</exclude-pattern>
+
+	<!-- Check for PHP cross-version compatibility. -->
+	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- Use the Human Made coding standards. -->
+	<rule ref="HM">
+		<!-- Don't restrict namespaced functions to `namespace.php`. -->
+		<exclude name="HM.Files.FunctionFileName.WrongFile"/>
+		<!-- Don't force namespace Foo_Bar into directory foo_bar. -->
+		<exclude name="HM.Files.NamespaceDirectoryName"/>
+		<!-- Allow short `@var` notation. -->
+		<exclude name="Generic.Commenting.DocComment.MissingShort"/>
+		<!-- Pre-PHP7 sniff: rejects native scalar parameter types (string, bool, int). -->
+		<exclude name="Squiz.Commenting.FunctionComment.InvalidTypeHint"/>
+		<!-- Faulty sniff still bundled in the HM standard. -->
+		<exclude name="PSR2R.Namespaces.UseInAlphabeticalOrder.Order"/>
+	</rule>
+
+	<!-- A plugin's entry point necessarily both declares symbols and calls bootstrap(). -->
+	<rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+		<exclude-pattern>plugin.php</exclude-pattern>
+	</rule>
+</ruleset>
