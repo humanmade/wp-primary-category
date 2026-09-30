@@ -62,7 +62,10 @@ function register_binding_source(): void {
  * @return string|null
  */
 function get_binding_value( array $source_args, $block, string $attribute_name ): ?string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable, Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Fixed `get_value_callback` signature.
-	$post_id = (int) ( $block->context['postId'] ?? 0 );
+	// Falls back to the queried post: a block outside a Query Loop — a heading
+	// or a button beside one, say — is not guaranteed `postId` context, and a
+	// binding that resolves to nothing there fails silently as empty markup.
+	$post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 
 	if ( ! $post_id ) {
 		return null;
