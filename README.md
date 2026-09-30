@@ -8,7 +8,7 @@ Nothing about a post's term order changes. `get_the_terms()`, `get_the_category(
 and everything built on them return exactly what they returned before — the
 plugin stores the choice and hands it to whatever asks for it.
 
-Enabled for `category` and `post_tag` out of the box. Opt any other taxonomy in, or either of those out, with a filter.
+Enabled for `category` out of the box; opt in any other taxonomy with a filter.
 
 The chosen term is only honoured while it is still one of the post's terms.
 Untick it and the post falls back to its first term; tick it again and the
