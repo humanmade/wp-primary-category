@@ -42,8 +42,13 @@
 		<exclude name="PSR2R.Namespaces.UseInAlphabeticalOrder.Order"/>
 	</rule>
 
-	<!-- A plugin's entry point necessarily both declares symbols and calls bootstrap(). -->
+	<!--
+		A plugin's entry point necessarily both declares symbols and calls
+		bootstrap(), and a WP-CLI command has to register itself in the same
+		file that defines it.
+	-->
 	<rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
 		<exclude-pattern>plugin.php</exclude-pattern>
+		<exclude-pattern>inc/cli.php</exclude-pattern>
 	</rule>
 </ruleset>

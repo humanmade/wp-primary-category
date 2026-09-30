@@ -102,13 +102,78 @@ control: the selector immediately above already makes that obvious.
 Unticking the chosen term does not clear the meta. The choice is ignored while
 the term is missing and honoured again the moment it is ticked back on.
 
-## Not here yet
+## Migrating from Yoast SEO
 
-Documented so the shape is clear, but landing in later work:
+Yoast stores a primary term as a term ID in `_yoast_wpseo_primary_{$taxonomy}`.
+This plugin stores the same integer in `_hm_primary_{$taxonomy}`. The shapes are
+identical, so the migration copies keys rather than transforming data:
 
-- **The Yoast migration command.** The meta key deliberately mirrors Yoast SEO's
-  `_yoast_wpseo_primary_{$taxonomy}`, so the migration is a key rename rather
-  than a data transform.
+```bash
+wp primary-term migrate
+```
+
+Reversing the direction syncs choices back to Yoast, which is what you want
+before rolling this plugin back:
+
+```bash
+wp primary-term migrate --from=hm --to=yoast --overwrite
+```
+
+That is a one-off command and deliberately not a runtime hook, so nothing in
+this plugin depends on Yoast being installed.
+
+### Flags
+
+| Flag | What it does |
+| --- | --- |
+| `--from=<yoast\|hm>` | Where to read from. Default `yoast`. |
+| `--to=<yoast\|hm>` | Where to write. Default `hm`. Must differ from `--from`. |
+| `--taxonomy=<list>` | Comma-separated. Defaults to the enabled taxonomies — pass this explicitly for one that is not enabled yet. |
+| `--post-type=<list>` | Comma-separated. Defaults to every post type each taxonomy is attached to. |
+| `--batch-size=<n>` | Posts loaded per batch. Default 500. |
+| `--dry-run` | Report and write nothing, `--cleanup` included. |
+| `--overwrite` | Replace a destination that already holds a different term. |
+| `--cleanup` | Delete the source meta once a post has been copied successfully. |
+
+Every post is reported as one of five outcomes, counted per taxonomy:
+
+- **copied** — the destination was empty and the source had a usable value.
+- **already** — the destination already held the same term. Nothing written.
+- **conflict** — the destination held a *different* term. Skipped and logged
+  with its post ID, because that value is somebody's explicit choice and you did
+  not ask for it to be thrown away. `--overwrite` replaces it and counts it as
+  copied.
+- **orphaned** — the source names a term the post no longer has, or one that no
+  longer exists. Skipped and logged: `get_primary_term()` would refuse to return
+  it, so copying it would only spread a value that is already broken.
+- **empty** — no source value. Skipped quietly.
+
+Conflicts and orphans end the run on `WP_CLI::warning()` rather than
+`WP_CLI::success()`, so a scripted run can tell that something was left behind.
+
+`--cleanup` deletes the source only after a successful copy. Never on a skip, an
+unresolved conflict, or a dry run.
+
+### A worked upgrade path
+
+```bash
+# 1. See what would happen. Nothing is written.
+wp primary-term migrate --dry-run
+
+# 2. Do it. Conflicts are reported with their post IDs and left alone.
+wp primary-term migrate
+
+# 3. Verify: a second dry run should now report everything as `already`.
+wp primary-term migrate --dry-run
+
+# 4. Once you are happy, drop Yoast's copy of the data.
+wp primary-term migrate --cleanup
+```
+
+Deal with any conflicts between steps 2 and 4 — either by hand, or by re-running
+with `--overwrite` if Yoast's value is the one you want to keep. Step 4 will not
+clean up a post it has not successfully copied, so anything unresolved keeps
+both values until you decide.
 
 ## Development
 
