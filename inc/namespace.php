@@ -20,6 +20,7 @@ function bootstrap(): void {
 	add_filter( 'block_type_metadata', __NAMESPACE__ . '\\register_primary_only_attribute' );
 	add_filter( 'register_block_type_args', __NAMESPACE__ . '\\wrap_post_terms_render', 10, 2 );
 	add_filter( 'post_link_category', __NAMESPACE__ . '\\filter_permalink_category', 10, 3 );
+	add_filter( 'block_core_breadcrumbs_post_type_settings', __NAMESPACE__ . '\\filter_breadcrumbs_settings', 10, 3 );
 }
 
 /**

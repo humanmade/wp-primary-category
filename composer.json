@@ -23,6 +23,7 @@
             "inc/api.php",
             "inc/bindings.php",
             "inc/block.php",
+            "inc/breadcrumbs.php",
             "inc/cli.php",
             "inc/editor.php",
             "inc/migrate.php",

@@ -3,7 +3,7 @@
  * Plugin Name: HM Primary Category
  * Plugin URI: https://github.com/humanmade/wp-primary-category
  * Description: Lets an editor mark one term per taxonomy as a post's primary one, and use it in blocks, permalinks and templates.
- * Version: 0.5.1
+ * Version: 0.6.0
  * Author: Human Made Limited
  * Author URI: https://humanmade.com
  * Text Domain: hm-primary-category
@@ -44,6 +44,7 @@ define( __NAMESPACE__ . '\\LOADED', true );
 require_once __DIR__ . '/inc/api.php';
 require_once __DIR__ . '/inc/bindings.php';
 require_once __DIR__ . '/inc/block.php';
+require_once __DIR__ . '/inc/breadcrumbs.php';
 require_once __DIR__ . '/inc/cli.php';
 require_once __DIR__ . '/inc/editor.php';
 require_once __DIR__ . '/inc/migrate.php';
