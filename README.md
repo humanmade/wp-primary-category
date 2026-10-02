@@ -2,7 +2,7 @@
 
 Lets an editor mark one term per taxonomy as a post's **primary** one, and gives
 you explicit ways to use that choice: an API, an option on core's Post Terms
-block, a Block Bindings source, and `%category%` permalinks.
+block, a Block Bindings source, core's breadcrumbs, and `%category%` permalinks.
 
 Nothing about a post's term order changes. `get_the_terms()`, `get_the_category()`
 and everything built on them return exactly what they returned before — the
@@ -157,6 +157,60 @@ instead.
 
 The source requires WordPress 6.5+ for Block Bindings. On anything older it is
 not registered and every bound block falls back to its own content.
+
+## Breadcrumbs
+
+Core's Breadcrumbs block (WordPress 7.0+) ends a single post's trail with one of
+its terms, and picks that term with `reset()` — whichever the post's term list
+happens to start with. This plugin names the term instead, so the trail ends on
+the editor's choice.
+
+It answers "which term" and nothing else. Two branches:
+
+1. If something has already named a **taxonomy** for the trail, the primary term
+   of that taxonomy is used.
+2. If nothing has, the plugin works out the taxonomy the same way core does —
+   the preferred taxonomy if the post has terms in it, otherwise the first
+   publicly queryable, REST-exposed one that does — and uses the primary term of
+   that.
+
+Which taxonomy a trail should follow is a question about a site's information
+architecture, not about who has a primary-term picker. So it stays with the
+site, and `block_core_breadcrumbs_post_type_settings` is where you say it:
+
+```php
+// Specials outrank sectors in the breadcrumb trail.
+add_filter( 'block_core_breadcrumbs_post_type_settings', function ( array $settings ): array {
+	$settings['taxonomy'] = 'special';
+
+	return $settings;
+}, 5 );
+```
+
+Priority matters: name the taxonomy before priority 10 and the plugin fills in
+that taxonomy's primary term. A post with no terms in it falls back to core's
+own choice, exactly as it would without this plugin.
+
+The taxonomy is sent back alongside the term, even when it is only an echo of
+what you asked for. Core matches the term as a *slug*, and a slug does not carry
+its taxonomy with it — since WordPress 4.1 `wp_unique_term_slug()` only
+de-duplicates within a taxonomy, so a sector `media` and a topic `media` are
+both legal. Sending the pair together is what keeps the slug from being read in
+the wrong taxonomy.
+
+The plugin stays quiet on a taxonomy it is not enabled for: there is no stored
+choice there, so the primary term already *is* the first term and core needs no
+help. It also stays quiet when a filter has already named a `term` — that is a
+more specific request than this one.
+
+**The cost, stated plainly:** working out core's taxonomy means repeating a rule
+core does not expose. If that rule changes in a future release, the plugin could
+name a taxonomy core would not have. The alternative was to let the plugin pick
+the taxonomy itself, which is a decision no plugin should make for a site. Name
+the taxonomy yourself if you need it pinned.
+
+On WordPress older than 7.0 the block and its filter do not exist, so nothing
+here runs and there is nothing to turn off.
 
 ## Permalinks
 
